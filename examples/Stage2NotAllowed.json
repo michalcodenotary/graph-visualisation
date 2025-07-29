@@ -1,0 +1,45 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "metadata": {
+    "component": {
+      "purl": "666",
+      "bom-ref": "111"
+    }
+  },
+  "components": [{
+      "purl": "111",
+      "type": "application",
+      "bom-ref": "111"
+    },
+    {
+      "purl": "aaa",
+      "type": "application",
+      "bom-ref": "aaa"
+    },
+    {
+      "purl": "abc",
+      "type": "application",
+      "bom-ref": "abc"
+    },
+    {
+      "purl": "222",
+      "type": "application",
+      "bom-ref": "222"
+    },
+    {
+      "purl": "333v2",
+      "type": "application",
+      "bom-ref": "333v2"
+    }
+  ],
+  "dependencies": [{
+      "ref": "666",
+      "dependsOn": ["abc", "111", "aaa"]
+    },
+    {
+      "ref": "111",
+      "dependsOn": ["222", "333v2"]
+    }
+  ]
+}

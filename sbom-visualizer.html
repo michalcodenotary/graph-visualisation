@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SBOM Visualizer</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+            padding: 20px;
+            gap: 20px;
+        }
+
+        .left-panel {
+            width: 350px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(10px);
+        }
+
+        .right-panel {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(10px);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 5px;
+        }
+
+        .sbom-preview {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .sbom-preview.current {
+            border-color: #28a745;
+            background: #d4edda;
+        }
+
+        .sbom-preview.next {
+            border-color: #ffc107;
+            background: #fff3cd;
+        }
+
+        .sbom-title {
+            font-weight: 600;
+            font-size: 16px;
+            margin-bottom: 10px;
+            color: #2c3e50;
+        }
+
+        .sbom-metadata {
+            font-size: 14px;
+            color: #6c757d;
+            margin-bottom: 10px;
+        }
+
+        .component-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+
+        .component-tag {
+            background: #3498db;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .next-button {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(45deg, #3498db, #2980b9);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+        }
+
+        .next-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.4);
+        }
+
+        .next-button:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .uploaded-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .uploaded-item {
+            background: #ecf0f1;
+            border: 1px solid #bdc3c7;
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .uploaded-item:hover {
+            background: #d5dbdb;
+            transform: translateX(5px);
+        }
+
+        .uploaded-item.active {
+            border-color: #e74c3c;
+            background: #fadbd8;
+        }
+
+        .graph-container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .node {
+            position: absolute;
+            background: linear-gradient(45deg, #3498db, #2980b9);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 80px;
+            z-index: 10;
+        }
+
+        .node:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(52, 152, 219, 0.5);
+        }
+
+        .node.root {
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+            box-shadow: 0 4px 15px rgba(231, 76, 60, 0.3);
+        }
+
+        .node.leaf {
+            background: linear-gradient(45deg, #27ae60, #229954);
+            box-shadow: 0 4px 15px rgba(39, 174, 96, 0.3);
+        }
+
+        .edge {
+            position: absolute;
+            background: linear-gradient(90deg, #3498db, #2980b9);
+            height: 3px;
+            border-radius: 2px;
+            transform-origin: left center;
+            z-index: 1;
+            opacity: 0.8;
+        }
+
+        .edge::after {
+            content: '';
+            position: absolute;
+            right: -8px;
+            top: -4px;
+            width: 0;
+            height: 0;
+            border-left: 8px solid #2980b9;
+            border-top: 5px solid transparent;
+            border-bottom: 5px solid transparent;
+        }
+
+        .tooltip {
+            position: absolute;
+            background: rgba(44, 62, 80, 0.95);
+            color: white;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 12px;
+            max-width: 200px;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background: #ecf0f1;
+            border-radius: 2px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #3498db, #2980b9);
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .animate-pulse {
+            animation: pulse 2s infinite;
+        }
+
+        .stage-indicator {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+            gap: 10px;
+        }
+
+        .stage-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #bdc3c7;
+            transition: all 0.3s ease;
+        }
+
+        .stage-dot.active {
+            background: #3498db;
+            transform: scale(1.2);
+        }
+
+        .stage-dot.completed {
+            background: #27ae60;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="left-panel">
+            <div class="stage-indicator" id="stageIndicator"></div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            
+            <div class="section-title">Current Upload</div>
+            <div class="sbom-preview current" id="currentSbom">
+                <div class="sbom-title">No SBOM selected</div>
+                <div class="sbom-metadata">Select a stage to begin</div>
+                <div class="component-list"></div>
+            </div>
+
+            <div class="section-title">Next Upload</div>
+            <div class="sbom-preview next" id="nextSbom">
+                <div class="sbom-title">Ready to upload</div>
+                <div class="sbom-metadata">Click Next to proceed</div>
+                <div class="component-list"></div>
+            </div>
+
+            <button class="next-button" id="nextButton">Start Upload Process</button>
+
+            <div class="section-title">Uploaded SBOMs</div>
+            <div class="uploaded-list" id="uploadedList"></div>
+        </div>
+
+        <div class="right-panel">
+            <div class="section-title">Dependency Graph</div>
+            <div class="graph-container" id="graphContainer"></div>
+            <div class="tooltip" id="tooltip"></div>
+        </div>
+    </div>
+
+    <script>
+        class SBOMVisualizer {
+            constructor() {
+                this.sbomData = [
+                    {
+                        "bomFormat": "CycloneDX",
+                        "specVersion": "1.5",
+                        "metadata": {
+                            "component": {
+                                "purl": "111",
+                                "bom-ref": "111"
+                            }
+                        },
+                        "components": [{
+                            "purl": "222",
+                            "type": "application",
+                            "bom-ref": "222"
+                        }, {
+                            "purl": "333",
+                            "type": "application",
+                            "bom-ref": "333"
+                        }, {
+                            "purl": "444",
+                            "type": "application",
+                            "bom-ref": "444"
+                        }],
+                        "dependencies": [{
+                            "ref": "111",
+                            "dependsOn": ["222", "333"]
+                        }, {
+                            "ref": "222",
+                            "dependsOn": ["444"]
+                        }]
+                    },
+                    {
+                        "bomFormat": "CycloneDX",
+                        "specVersion": "1.5",
+                        "metadata": {
+                            "component": {
+                                "purl": "aaa",
+                                "bom-ref": "aaa"
+                            }
+                        },
+                        "components": [{
+                            "purl": "bbb",
+                            "type": "application",
+                            "bom-ref": "bbb"
+                        }, {
+                            "purl": "ccc",
+                            "type": "application",
+                            "bom-ref": "ccc"
+                        }, {
+                            "purl": "ddd",
+                            "type": "application",
+                            "bom-ref": "ddd"
+                        }],
+                        "dependencies": [{
+                            "ref": "aaa",
+                            "dependsOn": ["bbb", "ccc", "ddd"]
+                        }]
+                    },
+                    {
+                        "bomFormat": "CycloneDX",
+                        "specVersion": "1.5",
+                        "metadata": {
+                            "component": {
+                                "purl": "555",
+                                "bom-ref": "111"
+                            }
+                        },
+                        "components": [{
+                            "purl": "111",
+                            "type": "application",
+                            "bom-ref": "111"
+                        }, {
+                            "purl": "aaa",
+                            "type": "application",
+                            "bom-ref": "aaa"
+                        }, {
+                            "purl": "abc",
+                            "type": "application",
+                            "bom-ref": "abc"
+                        }],
+                        "dependencies": [{
+                            "ref": "555",
+                            "dependsOn": ["abc", "111", "aaa"]
+                        }]
+                    },
+                    {
+                        "bomFormat": "CycloneDX",
+                        "specVersion": "1.5",
+                        "metadata": {
+                            "component": {
+                                "purl": "FinalComponent",
+                                "bom-ref": "FinalComponent"
+                            }
+                        },
+                        "components": [{
+                            "purl": "555",
+                            "type": "application",
+                            "bom-ref": "555"
+                        }],
+                        "dependencies": [{
+                            "ref": "FinalComponent",
+                            "dependsOn": ["555"]
+                        }]
+                    }
+                ];
+
+                this.currentStage = -1;
+                this.uploadedSboms = [];
+                this.dependencyGraph = new Map();
+                this.nodePositions = new Map();
+                this.graphElements = [];
+
+                this.init();
+            }
+
+            init() {
+                this.setupEventListeners();
+                this.updateStageIndicator();
+                this.updateDisplay();
+            }
+
+            setupEventListeners() {
+                const nextButton = document.getElementById('nextButton');
+                nextButton.addEventListener('click', () => this.nextStage());
+
+                const uploadedList = document.getElementById('uploadedList');
+                uploadedList.addEventListener('click', (e) => {
+                    const item = e.target.closest('.uploaded-item');
+                    if (item) {
+                        const index = parseInt(item.dataset.index);
+                        this.showSbomDetails(index);
+                    }
+                });
+            }
+
+            nextStage() {
+                if (this.currentStage < this.sbomData.length - 1) {
+                    this.currentStage++;
+                    const sbom = this.sbomData[this.currentStage];
+                    this.uploadedSboms.push(sbom);
+                    this.updateDependencyGraph(sbom);
+                    this.updateDisplay();
+                    this.animateGraphUpdate();
+                    this.updateStageIndicator();
+                    this.updateProgress();
+                }
+            }
+
+            updateDependencyGraph(sbom) {
+                // Add dependencies from the new SBOM
+                sbom.dependencies.forEach(dep => {
+                    if (!this.dependencyGraph.has(dep.ref)) {
+                        this.dependencyGraph.set(dep.ref, []);
+                    }
+                    dep.dependsOn.forEach(dependency => {
+                        if (!this.dependencyGraph.get(dep.ref).includes(dependency)) {
+                            this.dependencyGraph.get(dep.ref).push(dependency);
+                        }
+                    });
+                });
+            }
+
+            updateDisplay() {
+                this.updateCurrentSbom();
+                this.updateNextSbom();
+                this.updateUploadedList();
+                this.renderGraph();
+            }
+
+            updateCurrentSbom() {
+                const currentSbom = document.getElementById('currentSbom');
+                
+                if (this.currentStage >= 0) {
+                    const sbom = this.sbomData[this.currentStage];
+                    const components = sbom.components.map(c => c.purl);
+                    
+                    currentSbom.innerHTML = `
+                        <div class="sbom-title">${sbom.metadata.component.purl}</div>
+                        <div class="sbom-metadata">${sbom.bomFormat} v${sbom.specVersion}</div>
+                        <div class="component-list">
+                            ${components.map(comp => `<span class="component-tag">${comp}</span>`).join('')}
+                        </div>
+                    `;
+                } else {
+                    currentSbom.innerHTML = `
+                        <div class="sbom-title">No SBOM uploaded yet</div>
+                        <div class="sbom-metadata">Click "Start Upload Process" to begin</div>
+                        <div class="component-list"></div>
+                    `;
+                }
+            }
+
+            updateNextSbom() {
+                const nextSbom = document.getElementById('nextSbom');
+                const nextButton = document.getElementById('nextButton');
+                
+                if (this.currentStage < this.sbomData.length - 1) {
+                    const sbom = this.sbomData[this.currentStage + 1];
+                    const components = sbom.components.map(c => c.purl);
+                    
+                    nextSbom.innerHTML = `
+                        <div class="sbom-title">${sbom.metadata.component.purl}</div>
+                        <div class="sbom-metadata">${sbom.bomFormat} v${sbom.specVersion}</div>
+                        <div class="component-list">
+                            ${components.map(comp => `<span class="component-tag">${comp}</span>`).join('')}
+                        </div>
+                    `;
+                    
+                    nextButton.textContent = this.currentStage === -1 ? 'Start Upload Process' : 'Upload Next SBOM';
+                    nextButton.disabled = false;
+                } else {
+                    nextSbom.innerHTML = `
+                        <div class="sbom-title">All SBOMs uploaded</div>
+                        <div class="sbom-metadata">Upload process complete</div>
+                        <div class="component-list"></div>
+                    `;
+                    
+                    nextButton.textContent = 'Upload Complete';
+                    nextButton.disabled = true;
+                }
+            }
+
+            updateUploadedList() {
+                const uploadedList = document.getElementById('uploadedList');
+                
+                uploadedList.innerHTML = this.uploadedSboms.map((sbom, index) => `
+                    <div class="uploaded-item" data-index="${index}">
+                        <div style="font-weight: 600; margin-bottom: 5px;">
+                            Stage ${index + 1}: ${sbom.metadata.component.purl}
+                        </div>
+                        <div style="font-size: 12px; color: #666;">
+                            ${sbom.components.length} components, ${sbom.dependencies.length} dependencies
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            updateStageIndicator() {
+                const stageIndicator = document.getElementById('stageIndicator');
+                
+                stageIndicator.innerHTML = this.sbomData.map((_, index) => {
+                    let className = 'stage-dot';
+                    if (index < this.currentStage) className += ' completed';
+                    else if (index === this.currentStage) className += ' active';
+                    return `<div class="${className}"></div>`;
+                }).join('');
+            }
+
+            updateProgress() {
+                const progressFill = document.getElementById('progressFill');
+                const progress = ((this.currentStage + 1) / this.sbomData.length) * 100;
+                progressFill.style.width = `${progress}%`;
+            }
+
+            renderGraph() {
+                const container = document.getElementById('graphContainer');
+                
+                // Clear existing graph
+                this.graphElements.forEach(el => el.remove());
+                this.graphElements = [];
+                
+                if (this.dependencyGraph.size === 0) return;
+                
+                // Calculate positions for nodes
+                this.calculateNodePositions();
+                
+                // Render edges first (so they appear behind nodes)
+                this.renderEdges(container);
+                
+                // Render nodes
+                this.renderNodes(container);
+            }
+
+            calculateNodePositions() {
+                const container = document.getElementById('graphContainer');
+                const containerRect = container.getBoundingClientRect();
+                const width = containerRect.width - 100;
+                const height = containerRect.height - 100;
+                
+                // Get all unique nodes
+                const allNodes = new Set();
+                this.dependencyGraph.forEach((deps, node) => {
+                    allNodes.add(node);
+                    deps.forEach(dep => allNodes.add(dep));
+                });
+                
+                // Arrange nodes in a hierarchical layout
+                const levels = this.calculateNodeLevels();
+                const nodesByLevel = new Map();
+                
+                levels.forEach((level, node) => {
+                    if (!nodesByLevel.has(level)) {
+                        nodesByLevel.set(level, []);
+                    }
+                    nodesByLevel.get(level).push(node);
+                });
+                
+                const maxLevel = Math.max(...levels.values());
+                const levelHeight = height / (maxLevel + 1);
+                
+                nodesByLevel.forEach((nodes, level) => {
+                    const y = 50 + level * levelHeight;
+                    const spacing = width / (nodes.length + 1);
+                    
+                    nodes.forEach((node, index) => {
+                        const x = 50 + (index + 1) * spacing;
+                        this.nodePositions.set(node, { x, y });
+                    });
+                });
+            }
+
+            calculateNodeLevels() {
+                const levels = new Map();
+                const visited = new Set();
+                
+                // Find root nodes (nodes with no incoming edges)
+                const hasIncoming = new Set();
+                this.dependencyGraph.forEach(deps => {
+                    deps.forEach(dep => hasIncoming.add(dep));
+                });
+                
+                const roots = [];
+                this.dependencyGraph.forEach((_, node) => {
+                    if (!hasIncoming.has(node)) {
+                        roots.push(node);
+                    }
+                });
+                
+                // BFS to assign levels
+                const queue = roots.map(root => ({ node: root, level: 0 }));
+                
+                while (queue.length > 0) {
+                    const { node, level } = queue.shift();
+                    
+                    if (visited.has(node)) continue;
+                    visited.add(node);
+                    levels.set(node, level);
+                    
+                    const dependencies = this.dependencyGraph.get(node) || [];
+                    dependencies.forEach(dep => {
+                        if (!visited.has(dep)) {
+                            queue.push({ node: dep, level: level + 1 });
+                        }
+                    });
+                }
+                
+                // Handle any remaining nodes
+                this.dependencyGraph.forEach((_, node) => {
+                    if (!levels.has(node)) {
+                        levels.set(node, 0);
+                    }
+                });
+                
+                return levels;
+            }
+
+            renderNodes(container) {
+                this.nodePositions.forEach((pos, node) => {
+                    const nodeEl = document.createElement('div');
+                    nodeEl.className = 'node';
+                    nodeEl.textContent = node;
+                    nodeEl.style.left = `${pos.x}px`;
+                    nodeEl.style.top = `${pos.y}px`;
+                    nodeEl.style.transform = 'translate(-50%, -50%)';
+                    
+                    // Determine node type
+                    const hasOutgoing = this.dependencyGraph.has(node);
+                    const hasIncoming = Array.from(this.dependencyGraph.values()).some(deps => deps.includes(node));
+                    
+                    if (hasOutgoing && !hasIncoming) {
+                        nodeEl.classList.add('root');
+                    } else if (!hasOutgoing && hasIncoming) {
+                        nodeEl.classList.add('leaf');
+                    }
+                    
+                    // Add hover tooltip
+                    nodeEl.addEventListener('mouseenter', (e) => this.showTooltip(e, node));
+                    nodeEl.addEventListener('mouseleave', () => this.hideTooltip());
+                    
+                    container.appendChild(nodeEl);
+                    this.graphElements.push(nodeEl);
+                });
+            }
+
+            renderEdges(container) {
+                this.dependencyGraph.forEach((deps, node) => {
+                    const nodePos = this.nodePositions.get(node);
+                    if (!nodePos) return;
+                    
+                    deps.forEach(dep => {
+                        const depPos = this.nodePositions.get(dep);
+                        if (!depPos) return;
+                        
+                        const edge = this.createEdge(nodePos, depPos);
+                        container.appendChild(edge);
+                        this.graphElements.push(edge);
+                    });
+                });
+            }
+
+            createEdge(from, to) {
+                const edge = document.createElement('div');
+                edge.className = 'edge';
+                
+                const dx = to.x - from.x;
+                const dy = to.y - from.y;
+                const length = Math.sqrt(dx * dx + dy * dy);
+                const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+                
+                edge.style.left = `${from.x}px`;
+                edge.style.top = `${from.y}px`;
+                edge.style.width = `${length}px`;
+                edge.style.transform = `rotate(${angle}deg)`;
+                
+                return edge;
+            }
+
+            animateGraphUpdate() {
+                // Animate new nodes appearing
+                const nodes = document.querySelectorAll('.node');
+                const newNodes = Array.from(nodes).slice(-5); // Animate last few nodes
+                
+                anime({
+                    targets: newNodes,
+                    scale: [0, 1],
+                    opacity: [0, 1],
+                    duration: 800,
+                    delay: anime.stagger(200),
+                    easing: 'easeOutElastic(1, .8)'
+                });
+                
+                // Animate new edges
+                const edges = document.querySelectorAll('.edge');
+                const newEdges = Array.from(edges).slice(-3);
+                
+                anime({
+                    targets: newEdges,
+                    scaleX: [0, 1],
+                    opacity: [0, 0.8],
+                    duration: 600,
+                    delay: 400,
+                    easing: 'easeOutQuad'
+                });
+            }
+
+            showTooltip(event, node) {
+                const tooltip = document.getElementById('tooltip');
+                const deps = this.dependencyGraph.get(node) || [];
+                
+                tooltip.innerHTML = `
+                    <strong>${node}</strong><br>
+                    ${deps.length > 0 ? `Dependencies: ${deps.join(', ')}` : 'No dependencies'}
+                `;
+                
+                tooltip.style.left = `${event.pageX + 10}px`;
+                tooltip.style.top = `${event.pageY - 10}px`;
+                tooltip.style.opacity = '1';
+            }
+
+            hideTooltip() {
+                const tooltip = document.getElementById('tooltip');
+                tooltip.style.opacity = '0';
+            }
+
+            showSbomDetails(index) {
+                // Remove previous active states
+                document.querySelectorAll('.uploaded-item').forEach(item => {
+                    item.classList.remove('active');
+                });
+                
+                // Add active state to clicked item
+                const clickedItem = document.querySelector(`[data-index="${index}"]`);
+                clickedItem.classList.add('active');
+                
+                // Animate the corresponding nodes in the graph
+                const sbom = this.uploadedSboms[index];
+                const relevantNodes = [sbom.metadata.component.purl, ...sbom.components.map(c => c.purl)];
+                
+                document.querySelectorAll('.node').forEach(node => {
+                    if (relevantNodes.includes(node.textContent)) {
+                        anime({
+                            targets: node,
+                            scale: [1, 1.2, 1],
+                            duration: 600,
+                            easing: 'easeOutElastic(1, .8)'
+                        });
+                    }
+                });
+            }
+        }
+
+        // Initialize the visualizer when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new SBOMVisualizer();
+        });
+    </script>
+</body>
+</html>

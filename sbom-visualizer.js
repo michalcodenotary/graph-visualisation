@@ -176,16 +176,22 @@ class SBOMVisualizer {
             const sbom = this.sbomData[this.currentStage];
             const components = sbom.components.map(c => c.purl);
             
-            const dependencies = sbom.dependencies
-                .map(dep => `${dep.ref} → [${dep.dependsOn.join(', ')}]`)
-                .join(', ');
+            const dependencyVisualization = sbom.dependencies
+                .map(dep => `
+                    <div class="dependency-item">
+                        <span class="component-tag">${dep.ref}</span>
+                        <span class="dependency-arrow">→</span>
+                        <div class="dependency-list">
+                            ${dep.dependsOn.map(d => `<span class="dependency-tag">${d}</span>`).join('')}
+                        </div>
+                    </div>
+                `).join('');
 
             currentSbom.innerHTML = `
                 <div class="sbom-title">${sbom.metadata.component.purl}</div>
                 <div class="sbom-metadata">${sbom.bomFormat} v${sbom.specVersion}</div>
                 <div class="component-list">
-                    ${dependencies ? `<div style="margin-bottom: 10px; font-size: 12px; color: #2c3e50;">Dependencies: ${dependencies}</div>` : ''}
-                    ${components.map(comp => `<span class="component-tag">${comp}</span>`).join('')}
+                    ${dependencyVisualization ? `<div class="dependency-visualization">${dependencyVisualization}</div>` : ''}
                 </div>
             `;
         } else {
@@ -205,16 +211,22 @@ class SBOMVisualizer {
             const sbom = this.sbomData[this.currentStage + 1];
             const components = sbom.components.map(c => c.purl);
             
-            const dependencies = sbom.dependencies
-                .map(dep => `${dep.ref} → [${dep.dependsOn.join(', ')}]`)
-                .join(', ');
+            const dependencyVisualization = sbom.dependencies
+                .map(dep => `
+                    <div class="dependency-item">
+                        <span class="component-tag">${dep.ref}</span>
+                        <span class="dependency-arrow">→</span>
+                        <div class="dependency-list">
+                            ${dep.dependsOn.map(d => `<span class="dependency-tag">${d}</span>`).join('')}
+                        </div>
+                    </div>
+                `).join('');
 
             nextSbom.innerHTML = `
                 <div class="sbom-title">${sbom.metadata.component.purl}</div>
                 <div class="sbom-metadata">${sbom.bomFormat} v${sbom.specVersion}</div>
                 <div class="component-list">
-                    ${dependencies ? `<div style="margin-bottom: 10px; font-size: 12px; color: #2c3e50;">Dependencies: ${dependencies}</div>` : ''}
-                    ${components.map(comp => `<span class="component-tag">${comp}</span>`).join('')}
+                    ${dependencyVisualization ? `<div class="dependency-visualization">${dependencyVisualization}</div>` : ''}
                 </div>
             `;
             
@@ -235,16 +247,33 @@ class SBOMVisualizer {
     updateUploadedList() {
         const uploadedList = document.getElementById('uploadedList');
         
-        uploadedList.innerHTML = this.uploadedSboms.map((sbom, index) => `
-            <div class="uploaded-item" data-index="${index}">
-                <div style="font-weight: 600; margin-bottom: 5px;">
-                    Stage ${index + 1}: ${sbom.metadata.component.purl}
+        uploadedList.innerHTML = this.uploadedSboms.map((sbom, index) => {
+            const components = sbom.components.map(c => c.purl);
+            const dependencyVisualization = sbom.dependencies
+                .map(dep => `
+                    <div class="dependency-item">
+                        <span class="component-tag" style="font-size: 10px; padding: 1px 4px;">${dep.ref}</span>
+                        <span class="dependency-arrow" style="font-size: 10px;">→</span>
+                        <div class="dependency-list">
+                            ${dep.dependsOn.map(d => `<span class="dependency-tag" style="font-size: 9px; padding: 1px 3px;">${d}</span>`).join('')}
+                        </div>
+                    </div>
+                `).join('');
+            
+            return `
+                <div class="uploaded-item" data-index="${index}">
+                    <div style="font-weight: 600; margin-bottom: 5px;">
+                        Stage ${index + 1}: ${sbom.metadata.component.purl}
+                    </div>
+                    <div style="font-size: 12px; color: #666; margin-bottom: 8px;">
+                        ${sbom.components.length} components, ${sbom.dependencies.length} dependencies
+                    </div>
+                    <div style="font-size: 10px;">
+                    </div>
+                    ${dependencyVisualization ? `<div class="dependency-visualization" style="margin-top: 5px; padding: 5px; font-size: 9px;">${dependencyVisualization}</div>` : ''}
                 </div>
-                <div style="font-size: 12px; color: #666;">
-                    ${sbom.components.length} components, ${sbom.dependencies.length} dependencies
-                </div>
-            </div>
-        `).join('');
+            `;
+        }).join('');
     }
 
     updateStageIndicator() {
@@ -423,23 +452,38 @@ class SBOMVisualizer {
     animateGraphUpdate() {
         // Get nodes that were just added in this stage
         const currentSbom = this.sbomData[this.currentStage];
-        const newNodeNames = [currentSbom.metadata.component.purl, ...currentSbom.components.map(c => c.purl)];
         
-        // Only animate nodes that are actually new to the graph
+        // Track which nodes existed before this stage
+        const previousNodes = new Set();
+        for (let i = 0; i < this.currentStage; i++) {
+            const prevSbom = this.sbomData[i];
+            previousNodes.add(prevSbom.metadata.component.purl);
+            prevSbom.components.forEach(c => previousNodes.add(c.purl));
+        }
+        
+        // Only get truly new nodes (not in previous stages)
+        const newNodeNames = [currentSbom.metadata.component.purl, ...currentSbom.components.map(c => c.purl)]
+            .filter(name => !previousNodes.has(name));
+        
         const nodes = document.querySelectorAll('.node');
-        const newNodes = Array.from(nodes).filter(node => 
-            newNodeNames.includes(node.textContent)
-        );
-        
-        // Animate only the new nodes
+        const newNodes = Array.from(nodes).filter(node => newNodeNames.includes(node.textContent));
+
+        // Set initial state and animate only new nodes
         if (newNodes.length > 0) {
+            // Set initial invisible state
+            newNodes.forEach(node => {
+                node.style.transform += ' scale(0)';
+                node.style.opacity = '0';
+            });
+            
+            // Animate in
             anime({
                 targets: newNodes,
                 scale: [0, 1],
                 opacity: [0, 1],
                 duration: 800,
                 delay: anime.stagger(200),
-                easing: 'easeOutElastic(1, .8)'
+                easing: 'easeInOutElastic(1, .8)'
             });
         }
         
@@ -479,8 +523,12 @@ class SBOMVisualizer {
     }
 
     showSbomDetails(index) {
+        // Clear previous highlights
         document.querySelectorAll('.uploaded-item').forEach(item => {
             item.classList.remove('active');
+        });
+        document.querySelectorAll('.node').forEach(node => {
+            node.classList.remove('highlighted');
         });
         
         const clickedItem = document.querySelector(`[data-index="${index}"]`);
@@ -492,14 +540,15 @@ class SBOMVisualizer {
             ...sbom.components.map(c => c.purl)
         ];
 
+        // Highlight relevant nodes with CSS class and animation
         document.querySelectorAll('.node').forEach(node => {
             if (relevantNodes.includes(node.textContent)) {
+                node.classList.add('highlighted');
                 anime({
                     targets: node,
-                    scale: [1, 1.3, 1],
-                    duration: 800,
-                    easing: 'easeOutElastic(1, .8)',
-                    backgroundColor: '#f39c12'
+                    scale: [1, 1.4, 1.15],
+                    duration: 1000,
+                    easing: 'easeOutElastic(1, .8)'
                 });
             }
         });

@@ -269,3 +269,65 @@ body {
 .stage-dot.completed {
     background: #27ae60;
 }
+
+.node.highlighted {
+    background: linear-gradient(45deg, #ff6b35, #f7931e) !important;
+    box-shadow: 0 10px 30px rgba(255, 107, 53, 0.8) !important;
+    transform: scale(1.2) translate(-50%, -50%) !important;
+    animation: pulse-highlight 1.5s infinite;
+    border: 3px solid #fff !important;
+    z-index: 20 !important;
+}
+
+@keyframes pulse-highlight {
+    0% { 
+        box-shadow: 0 10px 30px rgba(255, 107, 53, 0.8);
+        transform: scale(1.2) translate(-50%, -50%);
+    }
+    50% { 
+        box-shadow: 0 15px 40px rgba(255, 107, 53, 1), 0 0 20px rgba(255, 107, 53, 0.6);
+        transform: scale(1.25) translate(-50%, -50%);
+    }
+    100% { 
+        box-shadow: 0 10px 30px rgba(255, 107, 53, 0.8);
+        transform: scale(1.2) translate(-50%, -50%);
+    }
+}
+
+.dependency-visualization {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 10px;
+    margin-top: 10px;
+    font-size: 11px;
+    color: #495057;
+}
+
+.dependency-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 5px;
+    padding: 3px 0;
+}
+
+.dependency-arrow {
+    margin: 0 8px;
+    color: #6c757d;
+    font-weight: bold;
+}
+
+.dependency-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3px;
+}
+
+.dependency-tag {
+    background: #17a2b8;
+    color: white;
+    padding: 2px 6px;
+    border-radius: 8px;
+    font-size: 10px;
+    font-weight: 500;
+}

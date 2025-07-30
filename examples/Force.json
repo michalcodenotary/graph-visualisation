@@ -3,50 +3,50 @@
   "specVersion": "1.5",
   "metadata": {
     "component": {
-      "purl": "FinalComponent",
-      "bom-ref": "FinalComponent"
+      "purl": "TradeApplication",
+      "bom-ref": "TradeApplication"
     }
   },
   "components": [
     {
-      "purl": "555",
+      "purl": "EcommerceModule",
       "type": "application",
-      "bom-ref": "555"
+      "bom-ref": "EcommerceModule"
     },
     {
-      "purl": "abc",
+      "purl": "exchange-library",
       "type": "application",
-      "bom-ref": "abc"
+      "bom-ref": "exchange-library"
     },
     {
-      "purl": "111",
+      "purl": "PostgreSQL",
       "type": "application",
-      "bom-ref": "111"
+      "bom-ref": "PostgreSQL"
     },
     {
-      "purl": "aaa",
+      "purl": "nginx",
       "type": "application",
-      "bom-ref": "aaa"
+      "bom-ref": "nginx"
     },
     {
-      "purl": "222",
+      "purl": "gcc-12-base",
       "type": "application",
-      "bom-ref": "222"
+      "bom-ref": "gcc-12-base"
     },
     {
-      "purl": "333",
+      "purl": "entraid-db-connector",
       "type": "application",
-      "bom-ref": "333"
+      "bom-ref": "entraid-db-connector"
     },
     {
-      "purl": "444",
+      "purl": "library-is-pair",
       "type": "application",
-      "bom-ref": "444"
+      "bom-ref": "library-is-pair"
     },
     {
-      "purl": "666",
+      "purl": "RateManagerModule",
       "type": "application",
-      "bom-ref": "666"
+      "bom-ref": "RateManagerModule"
     },
     {
       "purl": "000",
@@ -56,23 +56,23 @@
   ],
   "dependencies": [
     {
-      "ref": "FinalComponent",
-      "dependsOn": ["555", "666", "000"]
+      "ref": "TradeApplication",
+      "dependsOn": ["EcommerceModule", "RateManagerModule", "000"]
     },
     {
-      "ref": "555",
-      "dependsOn": ["000", "111", "aaa"]
+      "ref": "EcommerceModule",
+      "dependsOn": ["000", "PostgreSQL", "nginx"]
     },
     {
-      "ref": "111",
-      "dependsOn": ["222", "333"]
+      "ref": "PostgreSQL",
+      "dependsOn": ["gcc-12-base", "entraid-db-connector"]
     },
     {
-      "ref": "222",
-      "dependsOn": ["444"]
+      "ref": "gcc-12-base",
+      "dependsOn": ["library-is-pair"]
     },
     {
-      "ref": "aaa",
+      "ref": "nginx",
       "dependsOn": []
     }
   ]

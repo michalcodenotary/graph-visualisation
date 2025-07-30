@@ -3,29 +3,29 @@
   "specVersion": "1.5",
   "metadata": {
     "component": {
-      "purl": "666",
-      "bom-ref": "666"
+      "purl": "RateManagerModule",
+      "bom-ref": "RateManagerModule"
     }
   },
   "components": [{
-      "purl": "777",
+      "purl": "exchange-connector",
       "type": "application",
-      "bom-ref": "777"
+      "bom-ref": "exchange-connector"
     },
     {
-      "purl": "888",
+      "purl": "exchange-rate-calculator",
       "type": "application",
-      "bom-ref": "888"
+      "bom-ref": "exchange-rate-calculator"
     },
     {
-      "purl": "999",
+      "purl": "external-db-connector",
       "type": "application",
-      "bom-ref": "999"
+      "bom-ref": "external-db-connector"
     }
   ],
   "dependencies": [{
-      "ref": "666",
-      "dependsOn": ["777", "888", "999"]
+      "ref": "RateManagerModule",
+      "dependsOn": ["exchange-connector", "exchange-rate-calculator", "external-db-connector"]
     }
   ]
 }

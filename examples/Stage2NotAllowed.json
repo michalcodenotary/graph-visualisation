@@ -3,43 +3,43 @@
   "specVersion": "1.5",
   "metadata": {
     "component": {
-      "purl": "666",
-      "bom-ref": "111"
+      "purl": "RateManagerModule",
+      "bom-ref": "PostgreSQL"
     }
   },
   "components": [{
-      "purl": "111",
+      "purl": "PostgreSQL",
       "type": "application",
-      "bom-ref": "111"
+      "bom-ref": "PostgreSQL"
     },
     {
-      "purl": "aaa",
+      "purl": "nginx",
       "type": "application",
-      "bom-ref": "aaa"
+      "bom-ref": "nginx"
     },
     {
-      "purl": "abc",
+      "purl": "exchange-library",
       "type": "application",
-      "bom-ref": "abc"
+      "bom-ref": "exchange-library"
     },
     {
-      "purl": "222",
+      "purl": "gcc-12-base",
       "type": "application",
-      "bom-ref": "222"
+      "bom-ref": "gcc-12-base"
     },
     {
-      "purl": "333v2",
+      "purl": "entraid-db-connectorv2",
       "type": "application",
-      "bom-ref": "333v2"
+      "bom-ref": "entraid-db-connectorv2"
     }
   ],
   "dependencies": [{
-      "ref": "666",
-      "dependsOn": ["abc", "111", "aaa"]
+      "ref": "RateManagerModule",
+      "dependsOn": ["exchange-library", "PostgreSQL", "nginx"]
     },
     {
-      "ref": "111",
-      "dependsOn": ["222", "333v2"]
+      "ref": "PostgreSQL",
+      "dependsOn": ["gcc-12-base", "entraid-db-connectorv2"]
     }
   ]
 }

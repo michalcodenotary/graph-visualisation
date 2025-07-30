@@ -3,24 +3,24 @@
   "specVersion": "1.5",
   "metadata": {
     "component": {
-      "purl": "FinalComponent",
-      "bom-ref": "FinalComponent"
+      "purl": "TradeApplication",
+      "bom-ref": "TradeApplication"
     }
   },
   "components": [{
-      "purl": "555",
+      "purl": "EcommerceModule",
       "type": "application",
-      "bom-ref": "555"
+      "bom-ref": "EcommerceModule"
     },
     {
-      "purl": "666",
+      "purl": "RateManagerModule",
       "type": "application",
-      "bom-ref": "666"
+      "bom-ref": "RateManagerModule"
     }
   ],
   "dependencies": [{
-      "ref": "FinalComponent",
-      "dependsOn": ["555", "666"]
+      "ref": "TradeApplication",
+      "dependsOn": ["EcommerceModule", "RateManagerModule"]
     }
   ]
 }

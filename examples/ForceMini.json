@@ -4,10 +4,16 @@
   "metadata": {
     "component": {
       "purl": "EcommerceModule",
-      "bom-ref": "PostgreSQL"
+      "bom-ref": "EcommerceModule"
     }
   },
-  "components": [{
+  "components": [
+    {
+      "purl": "exchange-library",
+      "type": "application",
+      "bom-ref": "exchange-library"
+    },
+    {
       "purl": "PostgreSQL",
       "type": "application",
       "bom-ref": "PostgreSQL"
@@ -18,14 +24,24 @@
       "bom-ref": "nginx"
     },
     {
-      "purl": "exchange-library",
+      "purl": "glibc",
       "type": "application",
-      "bom-ref": "exchange-library"
+      "bom-ref": "glibc"
+    },
+    {
+      "purl": "ca-certificates-bundleV2",
+      "type": "application",
+      "bom-ref": "ca-certificates-bundleV2"
     }
   ],
-  "dependencies": [{
+  "dependencies": [
+    {
       "ref": "EcommerceModule",
       "dependsOn": ["exchange-library", "PostgreSQL", "nginx"]
+    },
+    {
+      "ref": "nginx",
+      "dependsOn": ["glibc", "ca-certificates-bundleV2"]
     }
   ]
 }

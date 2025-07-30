@@ -3,29 +3,29 @@
   "specVersion": "1.5",
   "metadata": {
     "component": {
-      "purl": "aaa",
-      "bom-ref": "aaa"
+      "purl": "nginx",
+      "bom-ref": "nginx"
     }
   },
   "components": [{
-      "purl": "bbb",
+      "purl": "glibc",
       "type": "application",
-      "bom-ref": "bbb"
+      "bom-ref": "glibc"
     },
     {
-      "purl": "ccc",
+      "purl": "ca-certificates-bundle",
       "type": "application",
-      "bom-ref": "ccc"
+      "bom-ref": "ca-certificates-bundle"
     },
     {
-      "purl": "ddd",
+      "purl": "zlib",
       "type": "application",
-      "bom-ref": "ddd"
+      "bom-ref": "zlib"
     }
   ],
   "dependencies": [{
-      "ref": "aaa",
-      "dependsOn": ["bbb", "ccc", "ddd"]
+      "ref": "nginx",
+      "dependsOn": ["glibc", "ca-certificates-bundle", "zlib"]
     }
   ]
 }

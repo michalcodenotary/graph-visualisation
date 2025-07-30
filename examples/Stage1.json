@@ -3,33 +3,33 @@
   "specVersion": "1.5",
   "metadata": {
     "component": {
-      "purl": "111",
-      "bom-ref": "111"
+      "purl": "PostgreSQL",
+      "bom-ref": "PostgreSQL"
     }
   },
   "components": [{
-      "purl": "222",
+      "purl": "gcc-12-base",
       "type": "application",
-      "bom-ref": "222"
+      "bom-ref": "gcc-12-base"
     },
     {
-      "purl": "333",
+      "purl": "entraid-db-connector",
       "type": "application",
-      "bom-ref": "333"
+      "bom-ref": "entraid-db-connector"
     },
     {
-      "purl": "444",
+      "purl": "library-is-pair",
       "type": "application",
-      "bom-ref": "444"
+      "bom-ref": "library-is-pair"
     }
   ],
   "dependencies": [{
-      "ref": "111",
-      "dependsOn": ["222", "333"]
+      "ref": "PostgreSQL",
+      "dependsOn": ["gcc-12-base", "entraid-db-connector"]
     },
     {
-      "ref": "222",
-      "dependsOn": ["444"]
+      "ref": "gcc-12-base",
+      "dependsOn": ["library-is-pair"]
     }
   ]
 }

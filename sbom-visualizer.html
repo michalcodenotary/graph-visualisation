@@ -30,7 +30,39 @@
                 <div class="component-list"></div>
             </div>
 
-            <button class="next-button" id="nextButton">Start Upload Process</button>
+            <div class="button-container">
+                <button class="next-button" id="nextButton">Start Upload Process</button>
+                <button class="upload-custom-button" id="uploadCustomButton">Upload Custom</button>
+            </div>
+            
+            <!-- Custom Upload Popup -->
+            <div id="customUploadPopup" class="popup-overlay">
+                <div class="popup-content">
+                    <div class="popup-header">
+                        <h3>Upload Custom SBOM</h3>
+                        <button class="close-popup" id="closePopupButton">&times;</button>
+                    </div>
+                    <div class="popup-body">
+                        <div class="available-sboms">
+                            <h4>Available SBOMs</h4>
+                            <div id="sbomFileList" class="sbom-file-list"></div>
+                        </div>
+                        <div class="upload-section">
+                            <h4>Upload Your Own SBOM</h4>
+                            <input type="file" id="sbomFileUpload" accept=".json">
+                        </div>
+                        <div class="force-mode-container">
+                            <input type="checkbox" id="popupForceModeCheckbox" class="force-mode-checkbox">
+                            <label for="popupForceModeCheckbox" class="force-mode-label">Force Mode</label>
+                            <span class="force-mode-tooltip" title="Force mode will intelligently merge and overwrite existing nodes">?</span>
+                        </div>
+                        <div id="validationError" class="validation-error"></div>
+                    </div>
+                    <div class="popup-footer">
+                        <button id="uploadSelectedSbom" class="upload-button">Upload Selected SBOM</button>
+                    </div>
+                </div>
+            </div>
 
             <div class="section-title">Uploaded SBOMs</div>
             <div class="uploaded-list" id="uploadedList"></div>
@@ -38,6 +70,11 @@
 
         <div class="right-panel">
             <div class="section-title">Dependency Graph</div>
+            <div class="history-navigation">
+                <button class="history-nav-button" id="prevHistoryButton">&larr;</button>
+                <div class="history-indicator" id="historyIndicator">Current State</div>
+                <button class="history-nav-button" id="nextHistoryButton">&rarr;</button>
+            </div>
             <div class="graph-container" id="graphContainer"></div>
             <div class="tooltip" id="tooltip"></div>
         </div>

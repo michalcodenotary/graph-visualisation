@@ -42,6 +42,10 @@
     {
       "ref": "nginx",
       "dependsOn": ["glibc", "ca-certificates-bundleV2"]
+    },
+    {
+      "ref": "PostgreSQL",
+      "dependsOn": []
     }
   ]
 }

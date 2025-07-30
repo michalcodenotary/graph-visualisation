@@ -11,11 +11,16 @@
       "purl": "555",
       "type": "application",
       "bom-ref": "555"
+    },
+    {
+      "purl": "666",
+      "type": "application",
+      "bom-ref": "666"
     }
   ],
   "dependencies": [{
       "ref": "FinalComponent",
-      "dependsOn": ["555"]
+      "dependsOn": ["555", "666"]
     }
   ]
 }

@@ -1,0 +1,79 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "metadata": {
+    "component": {
+      "purl": "FinalComponent",
+      "bom-ref": "FinalComponent"
+    }
+  },
+  "components": [
+    {
+      "purl": "555",
+      "type": "application",
+      "bom-ref": "555"
+    },
+    {
+      "purl": "abc",
+      "type": "application",
+      "bom-ref": "abc"
+    },
+    {
+      "purl": "111",
+      "type": "application",
+      "bom-ref": "111"
+    },
+    {
+      "purl": "aaa",
+      "type": "application",
+      "bom-ref": "aaa"
+    },
+    {
+      "purl": "222",
+      "type": "application",
+      "bom-ref": "222"
+    },
+    {
+      "purl": "333",
+      "type": "application",
+      "bom-ref": "333"
+    },
+    {
+      "purl": "444",
+      "type": "application",
+      "bom-ref": "444"
+    },
+    {
+      "purl": "666",
+      "type": "application",
+      "bom-ref": "666"
+    },
+    {
+      "purl": "000",
+      "type": "application",
+      "bom-ref": "000"
+    }
+  ],
+  "dependencies": [
+    {
+      "ref": "FinalComponent",
+      "dependsOn": ["555", "666", "000"]
+    },
+    {
+      "ref": "555",
+      "dependsOn": ["000", "111", "aaa"]
+    },
+    {
+      "ref": "111",
+      "dependsOn": ["222", "333"]
+    },
+    {
+      "ref": "222",
+      "dependsOn": ["444"]
+    },
+    {
+      "ref": "aaa",
+      "dependsOn": []
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "metadata": {
+    "component": {
+      "purl": "666",
+      "bom-ref": "666"
+    }
+  },
+  "components": [{
+      "purl": "777",
+      "type": "application",
+      "bom-ref": "777"
+    },
+    {
+      "purl": "888",
+      "type": "application",
+      "bom-ref": "888"
+    },
+    {
+      "purl": "999",
+      "type": "application",
+      "bom-ref": "999"
+    }
+  ],
+  "dependencies": [{
+      "ref": "666",
+      "dependsOn": ["777", "888", "999"]
+    }
+  ]
+}

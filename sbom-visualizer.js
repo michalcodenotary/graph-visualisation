@@ -1,111 +1,17 @@
 class SBOMVisualizer {
     constructor() {
-        this.sbomData = [
-            {
-                "bomFormat": "CycloneDX",
-                "specVersion": "1.5",
-                "metadata": {
-                    "component": {
-                        "purl": "111",
-                        "bom-ref": "111"
-                    }
-                },
-                "components": [{
-                    "purl": "222",
-                    "type": "application",
-                    "bom-ref": "222"
-                }, {
-                    "purl": "333",
-                    "type": "application",
-                    "bom-ref": "333"
-                }, {
-                    "purl": "444",
-                    "type": "application",
-                    "bom-ref": "444"
-                }],
-                "dependencies": [{
-                    "ref": "111",
-                    "dependsOn": ["222", "333"]
-                }, {
-                    "ref": "222",
-                    "dependsOn": ["444"]
-                }]
-            },
-            {
-                "bomFormat": "CycloneDX",
-                "specVersion": "1.5",
-                "metadata": {
-                    "component": {
-                        "purl": "aaa",
-                        "bom-ref": "aaa"
-                    }
-                },
-                "components": [{
-                    "purl": "bbb",
-                    "type": "application",
-                    "bom-ref": "bbb"
-                }, {
-                    "purl": "ccc",
-                    "type": "application",
-                    "bom-ref": "ccc"
-                }, {
-                    "purl": "ddd",
-                    "type": "application",
-                    "bom-ref": "ddd"
-                }],
-                "dependencies": [{
-                    "ref": "aaa",
-                    "dependsOn": ["bbb", "ccc", "ddd"]
-                }]
-            },
-            {
-                "bomFormat": "CycloneDX",
-                "specVersion": "1.5",
-                "metadata": {
-                    "component": {
-                        "purl": "555",
-                        "bom-ref": "111"
-                    }
-                },
-                "components": [{
-                    "purl": "111",
-                    "type": "application",
-                    "bom-ref": "111"
-                }, {
-                    "purl": "aaa",
-                    "type": "application",
-                    "bom-ref": "aaa"
-                }, {
-                    "purl": "abc",
-                    "type": "application",
-                    "bom-ref": "abc"
-                }],
-                "dependencies": [{
-                    "ref": "555",
-                    "dependsOn": ["abc", "111", "aaa"]
-                }]
-            },
-            {
-                "bomFormat": "CycloneDX",
-                "specVersion": "1.5",
-                "metadata": {
-                    "component": {
-                        "purl": "FinalComponent",
-                        "bom-ref": "FinalComponent"
-                    }
-                },
-                "components": [{
-                    "purl": "555",
-                    "type": "application",
-                    "bom-ref": "555"
-                }],
-                "dependencies": [{
-                    "ref": "FinalComponent",
-                    "dependsOn": ["555"]
-                }]
-            }
+        // List of SBOM file names to load
+        this.sbomFileNames = [
+            'examples/Stage1.json',
+            'examples/Stage1v2.json',
+            'examples/Stage2.json',
+            'examples/Stage2v2.json',
+            'examples/Stage3.json'
         ];
-
+        
+        // Will be populated as files are loaded
+        this.sbomData = [];
+        
         this.currentStage = -1;
         this.uploadedSboms = [];
         this.dependencyGraph = new Map();
@@ -117,8 +23,36 @@ class SBOMVisualizer {
 
     init() {
         this.setupEventListeners();
-        this.updateStageIndicator();
-        this.updateDisplay();
+        this.loadSbomData()
+            .then(() => {
+                this.updateStageIndicator();
+                this.updateDisplay();
+            })
+            .catch(error => {
+                console.error('Error loading SBOM data:', error);
+            });
+    }
+    
+    async loadSbomData() {
+        try {
+            // Clear existing data
+            this.sbomData = [];
+            
+            // Load each file
+            for (const fileName of this.sbomFileNames) {
+                const response = await fetch(fileName);
+                if (!response.ok) {
+                    throw new Error(`Failed to load ${fileName}: ${response.statusText}`);
+                }
+                const data = await response.json();
+                this.sbomData.push(data);
+            }
+            
+            console.log(`Loaded ${this.sbomData.length} SBOM files`);
+        } catch (error) {
+            console.error('Error loading SBOM files:', error);
+            throw error;
+        }
     }
 
     setupEventListeners() {
@@ -136,7 +70,8 @@ class SBOMVisualizer {
     }
 
     nextStage() {
-        if (this.currentStage < this.sbomData.length - 1) {
+        // Check if data is loaded and there are more stages
+        if (this.sbomData.length > 0 && this.currentStage < this.sbomData.length - 1) {
             this.currentStage++;
             const sbom = this.sbomData[this.currentStage];
             this.uploadedSboms.push(sbom);
@@ -145,6 +80,8 @@ class SBOMVisualizer {
             this.animateGraphUpdate();
             this.updateStageIndicator();
             this.updateProgress();
+        } else if (this.sbomData.length === 0) {
+            console.warn('Cannot proceed to next stage: SBOM data not loaded yet');
         }
     }
 
@@ -171,6 +108,16 @@ class SBOMVisualizer {
 
     updateCurrentSbom() {
         const currentSbom = document.getElementById('currentSbom');
+        
+        // If no data is loaded yet
+        if (this.sbomData.length === 0) {
+            currentSbom.innerHTML = `
+                <div class="sbom-title">Loading SBOM data...</div>
+                <div class="sbom-metadata">Please wait</div>
+                <div class="component-list"></div>
+            `;
+            return;
+        }
         
         if (this.currentStage >= 0) {
             const sbom = this.sbomData[this.currentStage];
@@ -206,6 +153,19 @@ class SBOMVisualizer {
     updateNextSbom() {
         const nextSbom = document.getElementById('nextSbom');
         const nextButton = document.getElementById('nextButton');
+        
+        // If no data is loaded yet
+        if (this.sbomData.length === 0) {
+            nextSbom.innerHTML = `
+                <div class="sbom-title">Loading SBOM data...</div>
+                <div class="sbom-metadata">Please wait</div>
+                <div class="component-list"></div>
+            `;
+            
+            nextButton.textContent = 'Loading...';
+            nextButton.disabled = true;
+            return;
+        }
         
         if (this.currentStage < this.sbomData.length - 1) {
             const sbom = this.sbomData[this.currentStage + 1];
@@ -279,6 +239,12 @@ class SBOMVisualizer {
     updateStageIndicator() {
         const stageIndicator = document.getElementById('stageIndicator');
         
+        if (this.sbomData.length === 0) {
+            // If no data is loaded yet, show loading indicator
+            stageIndicator.innerHTML = '<div class="loading">Loading SBOM data...</div>';
+            return;
+        }
+        
         stageIndicator.innerHTML = this.sbomData.map((_, index) => {
             let className = 'stage-dot';
             if (index < this.currentStage) className += ' completed';
@@ -289,6 +255,16 @@ class SBOMVisualizer {
 
     updateProgress() {
         const progressFill = document.getElementById('progressFill');
+        
+        if (this.sbomData.length === 0) {
+            // If no data is loaded yet, show indeterminate progress
+            progressFill.style.width = '5%';
+            progressFill.classList.add('loading');
+            return;
+        } else {
+            progressFill.classList.remove('loading');
+        }
+        
         const progress = ((this.currentStage + 1) / this.sbomData.length) * 100;
         progressFill.style.width = `${progress}%`;
     }
@@ -450,6 +426,11 @@ class SBOMVisualizer {
     }
 
     animateGraphUpdate() {
+        // Check if data is loaded and we have a valid current stage
+        if (this.sbomData.length === 0 || this.currentStage < 0 || this.currentStage >= this.sbomData.length) {
+            return;
+        }
+        
         // Get nodes that were just added in this stage
         const currentSbom = this.sbomData[this.currentStage];
         

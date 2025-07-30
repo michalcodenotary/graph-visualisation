@@ -184,6 +184,17 @@ body {
     box-shadow: 0 4px 15px rgba(39, 174, 96, 0.3);
 }
 
+/* New node color classes for main components and other components */
+.node.main-component {
+    background: linear-gradient(45deg, #e74c3c, #c0392b);
+    box-shadow: 0 4px 15px rgba(231, 76, 60, 0.3);
+}
+
+.node.other-component {
+    background: linear-gradient(45deg, #27ae60, #229954);
+    box-shadow: 0 4px 15px rgba(39, 174, 96, 0.3);
+}
+
 .edge {
     position: absolute;
     background: linear-gradient(90deg, #3498db, #2980b9);
@@ -368,12 +379,14 @@ body {
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.7);
+    background: rgba(0, 0, 0, 0.3);
     display: none;
     justify-content: center;
     align-items: center;
-    z-index: 1000;
-    backdrop-filter: blur(5px);
+    z-index: 9999;
+    backdrop-filter: blur(1px);
+    overflow-y: auto; /* Allow scrolling when content is too tall */
+    padding: 20px 0; /* Add vertical padding to ensure content isn't flush with the edge */
 }
 
 .popup-overlay.active {
@@ -383,13 +396,16 @@ body {
 .popup-content {
     background: white;
     border-radius: 15px;
-    width: 90%;
-    max-width: 600px;
+    width: 33%;
+    max-width: 1000px;
     max-height: 90vh;
     overflow-y: auto;
     box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
     display: flex;
     flex-direction: column;
+    position: fixed; /* Ensure proper positioning */
+    margin: auto; /* Center the popup */
+    transform: translateY(0); /* Reset any transforms */
 }
 
 .popup-header {
@@ -532,6 +548,58 @@ body {
     display: block;
 }
 
+/* Popup Columns Layout */
+.popup-columns {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 20px;
+    flex-wrap: wrap; /* Allow columns to wrap on small screens */
+}
+
+.popup-left-column {
+    flex: 1 1 300px; /* Allow column to grow and shrink, with a base width of 300px */
+    min-width: 0; /* Prevent flex item from overflowing */
+}
+
+.popup-right-column {
+    flex: 1 1 300px; /* Allow column to grow and shrink, with a base width of 300px */
+    min-width: 0; /* Prevent flex item from overflowing */
+}
+
+/* Media query for small screens */
+@media (max-width: 768px) {
+    .popup-columns {
+        flex-direction: column; /* Stack columns on small screens */
+    }
+    
+    .popup-body {
+        padding: 15px; /* Reduce padding on small screens */
+    }
+}
+
+.sbom-preview-container {
+    background: #f8f9fa;
+    border: 2px solid #e9ecef;
+    border-radius: 10px;
+    padding: 15px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.sbom-preview-container h4 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    color: #2c3e50;
+    font-size: 16px;
+}
+
+#sbomPreview {
+    flex: 1;
+    overflow-y: auto;
+    max-height: 300px;
+}
+
 /* History Navigation Styles */
 .history-navigation {
     display: flex;
@@ -622,4 +690,63 @@ body {
     0% { opacity: 0.7; }
     50% { opacity: 1; }
     100% { opacity: 0.7; }
+}
+
+/* Notification styles */
+.sbom-notification {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-100%);
+    background: #3498db;
+    color: white;
+    border-radius: 8px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
+    border: 2px solid #2980b9;
+    padding: 20px;
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-width: 400px;
+    max-width: 600px;
+    transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.sbom-notification.active {
+    transform: translateX(-50%) translateY(0);
+}
+
+.notification-content {
+    flex: 1;
+}
+
+.notification-title {
+    font-weight: 700;
+    font-size: 18px;
+    margin-bottom: 5px;
+    color: white;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.notification-message {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.notification-close {
+    background: none;
+    border: none;
+    font-size: 22px;
+    color: white;
+    cursor: pointer;
+    margin-left: 15px;
+    transition: all 0.2s ease;
+    opacity: 0.8;
+}
+
+.notification-close:hover {
+    color: white;
+    opacity: 1;
+    transform: scale(1.2);
 }

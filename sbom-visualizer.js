@@ -41,27 +41,18 @@
  */
 class SBOMVisualizer {
     constructor() {
-        // List of SBOM file names to load
+        // List of SBOM file names to load for the main sequence
         this.sbomFileNames = [
             'examples/Stage1.json',
             'examples/Stage1v2.json',
             'examples/Stage2.json',
             'examples/Stage2v2.json',
-            'examples/Stage3.json'
-        ];
-        
-        // Force mode SBOM files
-        this.forceSbomFileNames = [
-            'examples/ForceMini.json'
+            'examples/Stage3.json',
         ];
         
         // All available SBOM files for custom upload
         this.availableSbomFiles = [
-            { name: 'Stage1.json', path: 'examples/Stage1.json', forceMode: false },
-            { name: 'Stage1v2.json', path: 'examples/Stage1v2.json', forceMode: false },
-            { name: 'Stage2.json', path: 'examples/Stage2.json', forceMode: false },
-            { name: 'Stage2v2.json', path: 'examples/Stage2v2.json', forceMode: false },
-            { name: 'Stage3.json', path: 'examples/Stage3.json', forceMode: false },
+            // { name: 'Stage2NotAllowed.json.json', path: 'examples/Stage2NotAllowed.json.json', forceMode: false },
             { name: 'ForceMini.json', path: 'examples/ForceMini.json', forceMode: true },
             { name: 'Stage2NotAllowed.json', path: 'examples/Stage2NotAllowed.json', forceMode: false }
         ];
@@ -83,6 +74,9 @@ class SBOMVisualizer {
         this.historyPosition = -1;  // Current position in history (-1 means no history yet)
         this.historyStates = [];    // Array of dependency graph states at each point in history
         this.viewingHistory = false; // Flag to indicate if we're viewing history
+        
+        // Track highlighted SBOMs
+        this.highlightedSboms = new Set();
 
         this.init();
     }
@@ -109,29 +103,25 @@ class SBOMVisualizer {
             // Clear existing data
             this.sbomData = [];
             
-            // Load regular files
+            // Load all files from the consolidated list
             for (const fileName of this.sbomFileNames) {
                 const response = await fetch(fileName);
                 if (!response.ok) {
                     throw new Error(`Failed to load ${fileName}: ${response.statusText}`);
                 }
                 const data = await response.json();
-                data.forceMode = false; // Mark as regular file
+                
+                // Determine if this is a force mode file based on the file path
+                // This preserves the original behavior where ForceMini.json was a force mode file
+                const isForceMode = fileName.includes('Force');
+                data.forceMode = isForceMode;
+                
                 this.sbomData.push(data);
             }
             
-            // Load force mode files
-            for (const fileName of this.forceSbomFileNames) {
-                const response = await fetch(fileName);
-                if (!response.ok) {
-                    throw new Error(`Failed to load ${fileName}: ${response.statusText}`);
-                }
-                const data = await response.json();
-                data.forceMode = true; // Mark as force mode file
-                this.sbomData.push(data);
-            }
-            
-            console.log(`Loaded ${this.sbomData.length} SBOM files (including ${this.forceSbomFileNames.length} force mode files)`);
+            // Count force mode files for logging
+            const forceModeCount = this.sbomData.filter(data => data.forceMode).length;
+            console.log(`Loaded ${this.sbomData.length} SBOM files (including ${forceModeCount} force mode files)`);
         } catch (error) {
             console.error('Error loading SBOM files:', error);
             throw error;
@@ -396,6 +386,9 @@ class SBOMVisualizer {
                     this.selectedSbomFile = null;
                     this.updateSelectedSbomUI();
                     console.log(`Custom file selected: ${this.customFileUpload.name}`);
+                    
+                    // Display preview for the uploaded file
+                    this.displayCustomFilePreview(this.customFileUpload);
                 }
             });
         }
@@ -422,6 +415,16 @@ class SBOMVisualizer {
                 fileInput.value = '';
             }
             
+            // Reset the preview to initial state
+            const sbomPreview = document.getElementById('sbomPreview');
+            if (sbomPreview) {
+                sbomPreview.innerHTML = `
+                    <div class="sbom-title">No SBOM selected</div>
+                    <div class="sbom-metadata">Select an SBOM to view details</div>
+                    <div class="component-list"></div>
+                `;
+            }
+            
             // Clear validation error
             this.hideValidationError();
         }
@@ -438,11 +441,9 @@ class SBOMVisualizer {
         const sbomFileList = document.getElementById('sbomFileList');
         if (sbomFileList) {
             sbomFileList.innerHTML = this.availableSbomFiles.map(file => {
-                const isForce = file.forceMode;
                 return `
                     <div class="sbom-file-item" data-path="${file.path}">
                         <div class="sbom-file-item-name">${file.name}</div>
-                        <div class="sbom-file-item-type ${isForce ? 'force' : ''}">${isForce ? 'Force' : 'Regular'}</div>
                     </div>
                 `;
             }).join('');
@@ -464,6 +465,9 @@ class SBOMVisualizer {
                         fileInput.value = '';
                     }
                     
+                    // Load and display SBOM details in the preview
+                    this.loadAndDisplaySbomPreview(path);
+                    
                     console.log(`Selected SBOM: ${this.selectedSbomFile.name}`);
                 });
             });
@@ -482,6 +486,94 @@ class SBOMVisualizer {
                 selectedItem.classList.add('selected');
             }
         }
+    }
+    
+    async loadAndDisplaySbomPreview(path) {
+        const sbomPreview = document.getElementById('sbomPreview');
+        
+        try {
+            // Show loading state
+            sbomPreview.innerHTML = `
+                <div class="sbom-title">Loading...</div>
+                <div class="sbom-metadata">Please wait</div>
+                <div class="component-list"></div>
+            `;
+            
+            // Load the SBOM data
+            const sbomData = await this.loadSbomFromPath(path);
+            
+            // Display the SBOM data
+            this.displaySbomPreview(sbomData, sbomPreview);
+            
+        } catch (error) {
+            console.error('Error loading SBOM preview:', error);
+            sbomPreview.innerHTML = `
+                <div class="sbom-title">Error</div>
+                <div class="sbom-metadata">Failed to load SBOM data</div>
+                <div class="component-list"></div>
+            `;
+        }
+    }
+    
+    displayCustomFilePreview(file) {
+        const sbomPreview = document.getElementById('sbomPreview');
+        
+        // Show loading state
+        sbomPreview.innerHTML = `
+            <div class="sbom-title">Loading...</div>
+            <div class="sbom-metadata">Reading file</div>
+            <div class="component-list"></div>
+        `;
+        
+        const reader = new FileReader();
+        
+        reader.onload = (event) => {
+            try {
+                const sbomData = JSON.parse(event.target.result);
+                this.displaySbomPreview(sbomData, sbomPreview);
+            } catch (error) {
+                console.error('Error parsing custom file:', error);
+                sbomPreview.innerHTML = `
+                    <div class="sbom-title">Error</div>
+                    <div class="sbom-metadata">Invalid JSON file. Please upload a valid SBOM JSON file.</div>
+                    <div class="component-list"></div>
+                `;
+            }
+        };
+        
+        reader.onerror = () => {
+            console.error('Error reading file');
+            sbomPreview.innerHTML = `
+                <div class="sbom-title">Error</div>
+                <div class="sbom-metadata">Failed to read file. Please try again.</div>
+                <div class="component-list"></div>
+            `;
+        };
+        
+        reader.readAsText(file);
+    }
+    
+    displaySbomPreview(sbomData, previewElement) {
+        // Create dependency visualization
+        const dependencyVisualization = sbomData.dependencies
+            .map(dep => `
+                <div class="dependency-item">
+                    <span class="component-tag">${dep.ref}</span>
+                    <span class="dependency-arrow">→</span>
+                    <div class="dependency-list">
+                        ${dep.dependsOn.map(d => `<span class="dependency-tag">${d}</span>`).join('')}
+                    </div>
+                </div>
+            `).join('');
+        
+        // Update the preview with the data
+        previewElement.innerHTML = `
+            <div class="sbom-title">${sbomData.metadata.component.purl}</div>
+            <div class="sbom-metadata">${sbomData.bomFormat} v${sbomData.specVersion}</div>
+            <div class="component-list">
+                ${dependencyVisualization ? `<div class="dependency-visualization">${dependencyVisualization}</div>` : ''}
+            </div>
+        `;
     }
     
     showValidationError(message) {
@@ -548,6 +640,11 @@ class SBOMVisualizer {
             this.animateGraphUpdate();
             this.updateStageIndicator();
             this.updateProgress();
+            
+            // Show notification if this is the first SBOM added
+            if (this.uploadedSboms.length === 1) {
+                this.showSbomAddedNotification(sbomData);
+            }
             
             // Close the popup
             this.closeCustomUploadPopup();
@@ -655,9 +752,50 @@ class SBOMVisualizer {
             this.animateGraphUpdate();
             this.updateStageIndicator();
             this.updateProgress();
+            
+            // Show notification if this is the first SBOM added
+            if (this.uploadedSboms.length === 1) {
+                this.showSbomAddedNotification(sbom);
+            }
         } else if (this.sbomData.length === 0) {
             console.warn('Cannot proceed to next stage: SBOM data not loaded yet');
         }
+    }
+    
+    showSbomAddedNotification(sbom) {
+        // Create notification element if it doesn't exist
+        let notification = document.getElementById('sbomAddedNotification');
+        if (!notification) {
+            notification = document.createElement('div');
+            notification.id = 'sbomAddedNotification';
+            notification.className = 'sbom-notification';
+            document.body.appendChild(notification);
+        }
+        
+        // Set notification content
+        notification.innerHTML = `
+            <div class="notification-content">
+                <div class="notification-title">SBOM Added</div>
+                <div class="notification-message">Added SBOM: ${sbom.metadata.component.purl}</div>
+            </div>
+            <button class="notification-close">&times;</button>
+        `;
+        
+        // Add close button functionality
+        const closeButton = notification.querySelector('.notification-close');
+        if (closeButton) {
+            closeButton.addEventListener('click', () => {
+                notification.classList.remove('active');
+            });
+        }
+        
+        // Show notification
+        notification.classList.add('active');
+        
+        // Auto-hide after 5 seconds
+        setTimeout(() => {
+            notification.classList.remove('active');
+        }, 5000);
     }
 
     updateDependencyGraph(sbom) {
@@ -774,7 +912,7 @@ class SBOMVisualizer {
                 `).join('');
 
             // Check if this is a file that could be loaded with force mode
-            const isForceCandidate = sbom.forceMode === true || this.forceSbomFileNames.some(name => name.includes(sbom.metadata.component.purl));
+            const isForceCandidate = sbom.forceMode === true;
             
             nextSbom.innerHTML = `
                 <div class="sbom-title">${sbom.metadata.component.purl}${isForceCandidate ? ' <span class="force-candidate">(Force candidate)</span>' : ''}</div>
@@ -968,6 +1106,18 @@ class SBOMVisualizer {
         // Log the nodes that will be rendered
         console.log('Rendering nodes:', Array.from(this.nodePositions.keys()));
         
+        // Collect only metadata components (these should be red)
+        const mainComponents = new Set();
+        
+        // Add only components from metadata sections
+        this.uploadedSboms.forEach(sbom => {
+            if (sbom.metadata && sbom.metadata.component && sbom.metadata.component.purl) {
+                mainComponents.add(sbom.metadata.component.purl);
+            }
+        });
+        
+        console.log('Main components (metadata only):', Array.from(mainComponents));
+        
         this.nodePositions.forEach((pos, node) => {
             const nodeEl = document.createElement('div');
             nodeEl.className = 'node';
@@ -976,13 +1126,11 @@ class SBOMVisualizer {
             nodeEl.style.top = `${pos.y}px`;
             nodeEl.style.transform = 'translate(-50%, -50%)';
             
-            const hasOutgoing = this.dependencyGraph.has(node);
-            const hasIncoming = Array.from(this.dependencyGraph.values()).some(deps => deps.includes(node));
-            
-            if (hasOutgoing && !hasIncoming) {
-                nodeEl.classList.add('root');
-            } else if (!hasOutgoing && hasIncoming) {
-                nodeEl.classList.add('leaf');
+            // Color main components red, all others green
+            if (mainComponents.has(node)) {
+                nodeEl.classList.add('main-component');
+            } else {
+                nodeEl.classList.add('other-component');
             }
             
             nodeEl.addEventListener('mouseenter', (e) => this.showTooltip(e, node));
@@ -1105,33 +1253,70 @@ class SBOMVisualizer {
     }
 
     showSbomDetails(index) {
-        // Clear previous highlights
-        document.querySelectorAll('.uploaded-item').forEach(item => {
-            item.classList.remove('active');
-        });
+        const clickedItem = document.querySelector(`[data-index="${index}"]`);
+        const sbom = this.uploadedSboms[index];
+        
+        // Check if this SBOM is already highlighted
+        if (this.highlightedSboms.has(index)) {
+            // If it is, unhighlight it
+            this.highlightedSboms.delete(index);
+            clickedItem.classList.remove('active');
+            
+            // Refresh all node highlights
+            this.refreshNodeHighlights();
+        } else {
+            // If it's not, highlight it
+            this.highlightedSboms.add(index);
+            clickedItem.classList.add('active');
+            
+            const relevantNodes = [
+                sbom.metadata.component.purl, 
+                ...sbom.components.map(c => c.purl)
+            ];
+    
+            // Highlight relevant nodes with CSS class and animation
+            document.querySelectorAll('.node').forEach(node => {
+                if (relevantNodes.includes(node.textContent)) {
+                    node.classList.add('highlighted');
+                    anime({
+                        targets: node,
+                        scale: [1, 1.4, 1.15],
+                        duration: 1000,
+                        easing: 'easeOutElastic(1, .8)'
+                    });
+                }
+            });
+        }
+    }
+    
+    refreshNodeHighlights() {
+        // Clear all node highlights
         document.querySelectorAll('.node').forEach(node => {
             node.classList.remove('highlighted');
         });
         
-        const clickedItem = document.querySelector(`[data-index="${index}"]`);
-        clickedItem.classList.add('active');
+        // If there are no highlighted SBOMs, we're done
+        if (this.highlightedSboms.size === 0) {
+            return;
+        }
         
-        const sbom = this.uploadedSboms[index];
-        const relevantNodes = [
-            sbom.metadata.component.purl, 
-            ...sbom.components.map(c => c.purl)
-        ];
-
-        // Highlight relevant nodes with CSS class and animation
+        // Get all nodes that should be highlighted based on the highlighted SBOMs
+        const nodesToHighlight = new Set();
+        
+        this.highlightedSboms.forEach(index => {
+            const sbom = this.uploadedSboms[index];
+            const relevantNodes = [
+                sbom.metadata.component.purl, 
+                ...sbom.components.map(c => c.purl)
+            ];
+            
+            relevantNodes.forEach(node => nodesToHighlight.add(node));
+        });
+        
+        // Highlight the nodes
         document.querySelectorAll('.node').forEach(node => {
-            if (relevantNodes.includes(node.textContent)) {
+            if (nodesToHighlight.has(node.textContent)) {
                 node.classList.add('highlighted');
-                anime({
-                    targets: node,
-                    scale: [1, 1.4, 1.15],
-                    duration: 1000,
-                    easing: 'easeOutElastic(1, .8)'
-                });
             }
         });
     }

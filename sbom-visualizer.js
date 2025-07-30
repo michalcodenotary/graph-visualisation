@@ -552,30 +552,39 @@ class SBOMVisualizer {
         
         reader.readAsText(file);
     }
-    
+
     displaySbomPreview(sbomData, previewElement) {
         // Create dependency visualization
         const dependencyVisualization = sbomData.dependencies
-            .map(dep => `
+            .map(dep => {
+                // Pass the current SBOM context for proper classification
+                const componentTagClass = this.getComponentTagClass(dep.ref, sbomData);
+
+                return `
                 <div class="dependency-item">
-                    <span class="component-tag">${dep.ref}</span>
+                    <span class="${componentTagClass}">${dep.ref}</span>
                     <span class="dependency-arrow">→</span>
                     <div class="dependency-list">
-                        ${dep.dependsOn.map(d => `<span class="dependency-tag">${d}</span>`).join('')}
+                        ${dep.dependsOn.map(d => {
+                    // Pass the current SBOM context for proper classification
+                    const dependencyTagClass = this.getComponentTagClass(d, sbomData);
+                    return `<span class="${dependencyTagClass}">${d}</span>`;
+                }).join('')}
                     </div>
                 </div>
-            `).join('');
-        
+            `;
+            }).join('');
+
         // Update the preview with the data
         previewElement.innerHTML = `
-            <div class="sbom-title">${sbomData.metadata.component.purl}</div>
-            <div class="sbom-metadata">${sbomData.bomFormat} v${sbomData.specVersion}</div>
-            <div class="component-list">
-                ${dependencyVisualization ? `<div class="dependency-visualization">${dependencyVisualization}</div>` : ''}
-            </div>
-        `;
+        <div class="sbom-title">${sbomData.metadata.component.purl}</div>
+        <div class="sbom-metadata">${sbomData.bomFormat} v${sbomData.specVersion}</div>
+        <div class="component-list">
+            ${dependencyVisualization ? `<div class="dependency-visualization">${dependencyVisualization}</div>` : ''}
+        </div>
+    `;
     }
-    
+
     showValidationError(message) {
         const validationError = document.getElementById('validationError');
         if (validationError) {
@@ -837,100 +846,119 @@ class SBOMVisualizer {
 
     updateCurrentSbom() {
         const currentSbom = document.getElementById('currentSbom');
-        
+
         // If no data is loaded yet
         if (this.sbomData.length === 0) {
             currentSbom.innerHTML = `
-                <div class="sbom-title">Loading SBOM data...</div>
-                <div class="sbom-metadata">Please wait</div>
-                <div class="component-list"></div>
-            `;
+            <div class="sbom-title">Loading SBOM data...</div>
+            <div class="sbom-metadata">Please wait</div>
+            <div class="component-list"></div>
+        `;
             return;
         }
-        
+
         if (this.currentStage >= 0) {
             const sbom = this.sbomData[this.currentStage];
             const components = sbom.components.map(c => c.purl);
-            
+
             const dependencyVisualization = sbom.dependencies
-                .map(dep => `
+                .map(dep => {
+                    // Determine the appropriate tag class
+                    const componentTagClass = this.getComponentTagClass(dep.ref);
+
+                    return `
                     <div class="dependency-item">
-                        <span class="component-tag">${dep.ref}</span>
+                        <span class="${componentTagClass}">${dep.ref}</span>
                         <span class="dependency-arrow">→</span>
                         <div class="dependency-list">
-                            ${dep.dependsOn.map(d => `<span class="dependency-tag">${d}</span>`).join('')}
+                            ${dep.dependsOn.map(d => {
+                        // Determine the appropriate tag class for each dependency
+                        const dependencyTagClass = this.getComponentTagClass(d);
+                        return `<span class="${dependencyTagClass}">${d}</span>`;
+                    }).join('')}
                         </div>
                     </div>
-                `).join('');
+                `;
+                }).join('');
 
             currentSbom.innerHTML = `
-                <div class="sbom-title">${sbom.metadata.component.purl}</div>
-                <div class="sbom-metadata">${sbom.bomFormat} v${sbom.specVersion}</div>
-                <div class="component-list">
-                    ${dependencyVisualization ? `<div class="dependency-visualization">${dependencyVisualization}</div>` : ''}
-                </div>
-            `;
+            <div class="sbom-title">${sbom.metadata.component.purl}</div>
+            <div class="sbom-metadata">${sbom.bomFormat} v${sbom.specVersion}</div>
+            <div class="component-list">
+                ${dependencyVisualization ? `<div class="dependency-visualization">${dependencyVisualization}</div>` : ''}
+            </div>
+        `;
         } else {
             currentSbom.innerHTML = `
-                <div class="sbom-title">No SBOM uploaded yet</div>
-                <div class="sbom-metadata">Click "Start Upload Process" to begin</div>
-                <div class="component-list"></div>
-            `;
+            <div class="sbom-title">No SBOM uploaded yet</div>
+            <div class="sbom-metadata">Click "Start Upload Process" to begin</div>
+            <div class="component-list"></div>
+        `;
         }
     }
+
 
     updateNextSbom() {
         const nextSbom = document.getElementById('nextSbom');
         const nextButton = document.getElementById('nextButton');
-        
+
         // If no data is loaded yet
         if (this.sbomData.length === 0) {
             nextSbom.innerHTML = `
-                <div class="sbom-title">Loading SBOM data...</div>
-                <div class="sbom-metadata">Please wait</div>
-                <div class="component-list"></div>
-            `;
-            
+            <div class="sbom-title">Loading SBOM data...</div>
+            <div class="sbom-metadata">Please wait</div>
+            <div class="component-list"></div>
+        `;
+
             nextButton.textContent = 'Loading...';
             nextButton.disabled = true;
             return;
         }
-        
+
         if (this.currentStage < this.sbomData.length - 1) {
             const sbom = this.sbomData[this.currentStage + 1];
             const components = sbom.components.map(c => c.purl);
-            
+
             const dependencyVisualization = sbom.dependencies
-                .map(dep => `
+                .map(dep => {
+                    // Pass the current SBOM context for proper classification
+                    const componentTagClass = this.getComponentTagClass(dep.ref, sbom);
+
+                    return `
                     <div class="dependency-item">
-                        <span class="component-tag">${dep.ref}</span>
+                        <span class="${componentTagClass}">${dep.ref}</span>
                         <span class="dependency-arrow">→</span>
                         <div class="dependency-list">
-                            ${dep.dependsOn.map(d => `<span class="dependency-tag">${d}</span>`).join('')}
+                            ${dep.dependsOn.map(d => {
+                        // Pass the current SBOM context for proper classification
+                        const dependencyTagClass = this.getComponentTagClass(d, sbom);
+                        return `<span class="${dependencyTagClass}">${d}</span>`;
+                    }).join('')}
                         </div>
                     </div>
-                `).join('');
+                `;
+                }).join('');
 
             // Check if this is a file that could be loaded with force mode
             const isForceCandidate = sbom.forceMode === true;
-            
+
             nextSbom.innerHTML = `
-                <div class="sbom-title">${sbom.metadata.component.purl}${isForceCandidate ? ' <span class="force-candidate">(Force candidate)</span>' : ''}</div>
-                <div class="sbom-metadata">${sbom.bomFormat} v${sbom.specVersion}</div>
-                <div class="component-list">
-                    ${dependencyVisualization ? `<div class="dependency-visualization">${dependencyVisualization}</div>` : ''}
-                </div>
-            `;
-            
+            <div class="sbom-title">${sbom.metadata.component.purl}${isForceCandidate ? ' <span class="force-candidate">(Force candidate)</span>' : ''}</div>
+            <div class="sbom-metadata">${sbom.bomFormat} v${sbom.specVersion}</div>
+            <div class="component-list">
+                ${dependencyVisualization ? `<div class="dependency-visualization">${dependencyVisualization}</div>` : ''}
+            </div>
+        `;
+
             nextButton.textContent = this.currentStage === -1 ? 'Start Upload Process' : 'Upload Next SBOM';
             nextButton.disabled = false;
         } else {
             nextSbom.innerHTML = `
-                <div class="sbom-title">All SBOMs uploaded</div>
-                <div class="sbom-metadata">Upload process complete</div>
-                <div class="component-list"></div>
-            `;
-            
+            <div class="sbom-title">All SBOMs uploaded</div>
+            <div class="sbom-metadata">Upload process complete</div>
+            <div class="component-list"></div>
+        `;
+
             nextButton.textContent = 'Upload Complete';
             nextButton.disabled = true;
         }
@@ -938,37 +966,46 @@ class SBOMVisualizer {
 
     updateUploadedList() {
         const uploadedList = document.getElementById('uploadedList');
-        
+
         uploadedList.innerHTML = this.uploadedSboms.map((sbom, index) => {
             const components = sbom.components.map(c => c.purl);
             const dependencyVisualization = sbom.dependencies
-                .map(dep => `
+                .map(dep => {
+                    // Determine the appropriate tag class
+                    const componentTagClass = this.getComponentTagClass(dep.ref);
+
+                    return `
                     <div class="dependency-item">
-                        <span class="component-tag" style="font-size: 10px; padding: 1px 4px;">${dep.ref}</span>
+                        <span class="${componentTagClass}" style="font-size: 10px; padding: 1px 4px;">${dep.ref}</span>
                         <span class="dependency-arrow" style="font-size: 10px;">→</span>
                         <div class="dependency-list">
-                            ${dep.dependsOn.map(d => `<span class="dependency-tag" style="font-size: 9px; padding: 1px 3px;">${d}</span>`).join('')}
+                            ${dep.dependsOn.map(d => {
+                        // Determine the appropriate tag class for each dependency
+                        const dependencyTagClass = this.getComponentTagClass(d);
+                        return `<span class="${dependencyTagClass}" style="font-size: 9px; padding: 1px 3px;">${d}</span>`;
+                    }).join('')}
                         </div>
                     </div>
-                `).join('');
-            
+                `;
+                }).join('');
+
             // Check if this SBOM was uploaded with force mode
-            const forceModeIndicator = sbom.forceMode ? 
+            const forceModeIndicator = sbom.forceMode ?
                 `<span class="force-mode-indicator" style="background-color: #ff5722; color: white; font-size: 9px; padding: 1px 4px; border-radius: 3px; margin-left: 5px;">FORCE</span>` : '';
-            
+
             return `
-                <div class="uploaded-item${sbom.forceMode ? ' force-mode' : ''}" data-index="${index}">
-                    <div style="font-weight: 600; margin-bottom: 5px;">
-                        Stage ${index + 1}: ${sbom.metadata.component.purl} ${forceModeIndicator}
-                    </div>
-                    <div style="font-size: 12px; color: #666; margin-bottom: 8px;">
-                        ${sbom.components.length} components, ${sbom.dependencies.length} dependencies
-                    </div>
-                    <div style="font-size: 10px;">
-                    </div>
-                    ${dependencyVisualization ? `<div class="dependency-visualization" style="margin-top: 5px; padding: 5px; font-size: 9px;">${dependencyVisualization}</div>` : ''}
+            <div class="uploaded-item${sbom.forceMode ? ' force-mode' : ''}" data-index="${index}">
+                <div style="font-weight: 600; margin-bottom: 5px;">
+                    Stage ${index + 1}: ${sbom.metadata.component.purl} ${forceModeIndicator}
                 </div>
-            `;
+                <div style="font-size: 12px; color: #666; margin-bottom: 8px;">
+                    ${sbom.components.length} components, ${sbom.dependencies.length} dependencies
+                </div>
+                <div style="font-size: 10px;">
+                </div>
+                ${dependencyVisualization ? `<div class="dependency-visualization" style="margin-top: 5px; padding: 5px; font-size: 9px;">${dependencyVisualization}</div>` : ''}
+            </div>
+        `;
         }).join('');
     }
 
@@ -1059,6 +1096,30 @@ class SBOMVisualizer {
             });
         });
     }
+
+    getComponentTagClass(componentRef, currentSbom = null) {
+        if (currentSbom) {
+            // Check if it's the root component (from metadata)
+            if (currentSbom.metadata.component.purl === componentRef ||
+                currentSbom.metadata.component['bom-ref'] === componentRef) {
+                return 'component-tag';
+            }
+
+            return 'dependency-tag';
+        }
+
+        for (const sbom of this.uploadedSboms) {
+            console.log(componentRef, sbom.metadata.component.purl);
+            if (sbom.metadata.component.purl === componentRef ||
+                sbom.metadata.component['bom-ref'] === componentRef) {
+                return 'component-tag';
+            }
+        }
+
+        return 'dependency-tag';
+    }
+
+
 
     calculateNodeLevels() {
         const levels = new Map();

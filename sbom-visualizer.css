@@ -27,6 +27,18 @@ body {
     backdrop-filter: blur(10px);
 }
 
+.logo-container {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+.logo {
+    width: 200px;
+    height: auto;
+    max-width: 100%;
+}
+
 .right-panel {
     flex: 1;
     background: rgba(255, 255, 255, 0.95);

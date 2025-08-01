@@ -41,22 +41,49 @@
  */
 class SBOMVisualizer {
     constructor() {
-        // List of SBOM file names to load for the main sequence
-        this.sbomFileNames = [
-            'examples/Stage1.json',
-            'examples/Stage1v2.json',
-            'examples/Stage2.json',
-            'examples/Stage2v2.json',
-            'examples/Stage3.json',
-        ];
-        
-        // All available SBOM files for custom upload
-        this.availableSbomFiles = [
-            // { name: 'Stage2NotAllowed.json.json', path: 'examples/Stage2NotAllowed.json.json', forceMode: false },
-            { name: 'ForceMini.json', path: 'examples/ForceMini.json', forceMode: true },
-            { name: 'Force.json', path: 'examples/Force.json', forceMode: true },
-            { name: 'Stage2NotAllowed.json', path: 'examples/Stage2NotAllowed.json', forceMode: false }
-        ];
+        const query = window.location.search;
+        console.log('Current URL query:', query);
+
+        const params = new URLSearchParams(query);
+        const pathId = params.get("id");  // e.g., "1" from ?id=1
+
+        switch (pathId) {
+            case "1":
+                this.sbomFileNames = [
+                    'examples/1/1.json',
+                    'examples/1/2.json',
+                ];
+
+                this.availableSbomFiles = [
+                    { name: '3.json', path: 'examples/1/3.json', forceMode: true },
+                ];
+                break;
+            case "2":
+                this.sbomFileNames = [
+                    'examples/2/1.json',
+                    'examples/2/2.json',
+                ];
+
+                this.availableSbomFiles = [
+                    { name: '3.json', path: 'examples/2/3.json', forceMode: true },
+                ];
+                break;
+            default:
+                this.sbomFileNames = [
+                    'examples/Stage1.json',
+                    'examples/Stage1v2.json',
+                    'examples/Stage2.json',
+                    'examples/Stage2v2.json',
+                    'examples/Stage3.json',
+                ];
+
+                this.availableSbomFiles = [
+                    { name: 'ForceMini.json', path: 'examples/ForceMini.json', forceMode: true },
+                    { name: 'Force.json', path: 'examples/Force.json', forceMode: true },
+                    { name: 'Stage2NotAllowed.json', path: 'examples/Stage2NotAllowed.json', forceMode: true }
+                ];
+                break;
+        }
         
         // Will be populated as files are loaded
         this.sbomData = [];
@@ -812,27 +839,60 @@ class SBOMVisualizer {
         // Check if this is a force mode SBOM
         const isForceMode = sbom.forceMode === true;
         
-        // Process dependencies from the new SBOM
-        sbom.dependencies.forEach(dep => {
-            if (!this.dependencyGraph.has(dep.ref)) {
-                // Node doesn't exist yet, create it
-                this.dependencyGraph.set(dep.ref, []);
-            }
+        // Check if there are components but no dependencies section or empty dependencies array
+        if (sbom.components && sbom.components.length > 0 && (!sbom.dependencies || sbom.dependencies.length === 0)) {
+            console.log('SBOM has components but no dependencies. Linking all components to the main component.');
             
-            if (isForceMode) {
-                // In force mode, replace existing dependencies for this node
-                console.log(`Force mode: Replacing dependencies for ${dep.ref}`);
-                // Store the new dependencies
-                this.dependencyGraph.set(dep.ref, [...dep.dependsOn]);
-            } else {
-                // Regular mode: add new dependencies without replacing existing ones
-                dep.dependsOn.forEach(dependency => {
-                    if (!this.dependencyGraph.get(dep.ref).includes(dependency)) {
-                        this.dependencyGraph.get(dep.ref).push(dependency);
+            // Get the main component from metadata
+            const mainComponent = sbom.metadata.component.purl || sbom.metadata.component['bom-ref'];
+            
+            if (mainComponent) {
+                // Make sure the main component exists in the dependency graph
+                if (!this.dependencyGraph.has(mainComponent)) {
+                    this.dependencyGraph.set(mainComponent, []);
+                }
+                
+                // Link all components to the main component
+                sbom.components.forEach(component => {
+                    const componentRef = component.purl || component['bom-ref'];
+                    
+                    // Skip if the component is the same as the main component
+                    if (componentRef && componentRef !== mainComponent) {
+                        // Add the component to the main component's dependencies
+                        if (!this.dependencyGraph.get(mainComponent).includes(componentRef)) {
+                            this.dependencyGraph.get(mainComponent).push(componentRef);
+                        }
+                        
+                        // Make sure the component exists in the dependency graph
+                        if (!this.dependencyGraph.has(componentRef)) {
+                            this.dependencyGraph.set(componentRef, []);
+                        }
                     }
                 });
             }
-        });
+        } else {
+            // Process dependencies from the new SBOM
+            sbom.dependencies.forEach(dep => {
+                if (!this.dependencyGraph.has(dep.ref)) {
+                    // Node doesn't exist yet, create it
+                    this.dependencyGraph.set(dep.ref, []);
+                }
+                
+                if (isForceMode) {
+                    // In force mode, replace existing dependencies for this node
+                    console.log(`Force mode: Replacing dependencies for ${dep.ref}`);
+                    // Store the new dependencies
+                    this.dependencyGraph.set(dep.ref, [...dep.dependsOn]);
+                } else {
+                    // Regular mode: add new dependencies without replacing existing ones
+                    dep.dependsOn.forEach(dependency => {
+                        if (!this.dependencyGraph.get(dep.ref).includes(dependency)) {
+                            this.dependencyGraph.get(dep.ref).push(dependency);
+                        }
+                    });
+                }
+            });
+        }
         
         // Log the updated dependency graph
         console.log('Updated dependency graph:', this.dependencyGraph);

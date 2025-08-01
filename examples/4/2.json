@@ -40,11 +40,7 @@
     },
     {
       "ref": "B",
-      "dependsOn": ["C"]
-    },
-    {
-      "ref": "B",
-      "dependsOn": ["D"]
+      "dependsOn": ["C", "D"]
     }
   ]
 }

@@ -177,7 +177,7 @@ body {
     box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
     cursor: pointer;
     transition: all 0.3s ease;
-    min-width: 80px;
+    min-width: 40px;
     z-index: 10;
 }
 
@@ -220,13 +220,13 @@ body {
 .edge::after {
     content: '';
     position: absolute;
-    right: -8px;
-    top: -4px;
+    right: -16px;   /* was -8px */
+    top: -8px;      /* was -4px */
     width: 0;
     height: 0;
-    border-left: 8px solid #2980b9;
-    border-top: 5px solid transparent;
-    border-bottom: 5px solid transparent;
+    border-left: 16px solid #2980b9;          /* was 8px */
+    border-top: 10px solid transparent;       /* was 5px */
+    border-bottom: 10px solid transparent;    /* was 5px */
 }
 
 .tooltip {

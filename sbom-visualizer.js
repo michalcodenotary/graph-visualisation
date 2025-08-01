@@ -1311,17 +1311,33 @@ class SBOMVisualizer {
     createEdge(from, to) {
         const edge = document.createElement('div');
         edge.className = 'edge';
-        
+
         const dx = to.x - from.x;
         const dy = to.y - from.y;
-        const length = Math.sqrt(dx * dx + dy * dy);
+        const distance = Math.sqrt(dx * dx + dy * dy);
         const angle = Math.atan2(dy, dx) * 180 / Math.PI;
-        
-        edge.style.left = `${from.x}px`;
-        edge.style.top = `${from.y}px`;
+
+        // Estimate node radius - using a fixed value for simplicity
+        // This could be improved by dynamically calculating based on node content
+        const nodeRadius = 30; // Approximate radius based on CSS (border-radius + padding)
+
+        // Calculate unit vector in the direction from source to target
+        const unitX = dx / distance;
+        const unitY = dy / distance;
+
+        // Calculate new starting point at the edge of the source node
+        const startX = from.x + (unitX * nodeRadius);
+        const startY = from.y + (unitY * nodeRadius);
+
+        // Adjust length to stop at the edge of the target node
+        // Subtract both nodes' radii from the total distance
+        const length = Math.max(distance - (2 * nodeRadius) -10, 0);
+
+        edge.style.left = `${startX}px`;
+        edge.style.top = `${startY}px`;
         edge.style.width = `${length}px`;
         edge.style.transform = `rotate(${angle}deg)`;
-        
+
         return edge;
     }
 

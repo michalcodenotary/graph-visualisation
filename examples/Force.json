@@ -49,19 +49,19 @@
       "bom-ref": "RateManagerModule"
     },
     {
-      "purl": "000",
+      "purl": "FeedbackModule",
       "type": "application",
-      "bom-ref": "000"
+      "bom-ref": "FeedbackModule"
     }
   ],
   "dependencies": [
     {
       "ref": "TradeApplication",
-      "dependsOn": ["EcommerceModule", "RateManagerModule", "000"]
+      "dependsOn": ["EcommerceModule", "RateManagerModule", "FeedbackModule"]
     },
     {
       "ref": "EcommerceModule",
-      "dependsOn": ["000", "PostgreSQL", "nginx"]
+      "dependsOn": ["FeedbackModule", "PostgreSQL", "nginx"]
     },
     {
       "ref": "PostgreSQL",

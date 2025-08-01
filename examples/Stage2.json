@@ -4,7 +4,7 @@
   "metadata": {
     "component": {
       "purl": "EcommerceModule",
-      "bom-ref": "PostgreSQL"
+      "bom-ref": "EcommerceModule"
     }
   },
   "components": [{

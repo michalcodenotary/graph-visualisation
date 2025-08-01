@@ -54,6 +54,7 @@ class SBOMVisualizer {
         this.availableSbomFiles = [
             // { name: 'Stage2NotAllowed.json.json', path: 'examples/Stage2NotAllowed.json.json', forceMode: false },
             { name: 'ForceMini.json', path: 'examples/ForceMini.json', forceMode: true },
+            { name: 'Force.json', path: 'examples/Force.json', forceMode: true },
             { name: 'Stage2NotAllowed.json', path: 'examples/Stage2NotAllowed.json', forceMode: false }
         ];
         

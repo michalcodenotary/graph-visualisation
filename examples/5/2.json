@@ -3,8 +3,8 @@
   "specVersion": "1.5",
   "metadata": {
     "component": {
-      "purl": "1",
-      "bom-ref": "1"
+      "purl": "2",
+      "bom-ref": "2"
     }
   },
   "components": [
@@ -30,9 +30,5 @@
     }
   ],
   "dependencies": [
-    {
-      "ref": "1",
-      "dependsOn": ["A", "B", "C", "D"]
-    }
   ]
 }

@@ -32,7 +32,19 @@
   "dependencies": [
     {
       "ref": "1",
-      "dependsOn": ["A", "B", "C", "D"]
+      "dependsOn": ["A"]
+    },
+    {
+      "ref": "A",
+      "dependsOn": ["B"]
+    },
+    {
+      "ref": "B",
+      "dependsOn": ["C"]
+    },
+    {
+      "ref": "B",
+      "dependsOn": ["D"]
     }
   ]
 }

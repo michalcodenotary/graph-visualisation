@@ -30,9 +30,5 @@
     }
   ],
   "dependencies": [
-    {
-      "ref": "1",
-      "dependsOn": ["A", "B", "C", "D"]
-    }
   ]
 }

@@ -68,6 +68,35 @@ class SBOMVisualizer {
                     { name: '3.json', path: 'examples/2/3.json', forceMode: true },
                 ];
                 break;
+            case "3":
+                this.sbomFileNames = [
+                    'examples/3/1.json',
+                ];
+
+                this.availableSbomFiles = [
+                    { name: '2.json', path: 'examples/3/2.json', forceMode: true },
+                ];
+                break;
+            case "4":
+                this.sbomFileNames = [
+                    'examples/4/1.json',
+                ];
+
+                this.availableSbomFiles = [
+                    { name: '2.json', path: 'examples/4/2.json', forceMode: true },
+                ];
+                break;
+            case "5":
+                this.sbomFileNames = [
+                    'examples/5/1.json',
+                    'examples/5/2.json',
+                ];
+
+                this.availableSbomFiles = [
+                    { name: '3.json', path: 'examples/5/3.json', forceMode: true },
+                ];
+                break;
+
             default:
                 this.sbomFileNames = [
                     'examples/Stage1.json',
